@@ -1,0 +1,24 @@
+name: Pitaiya debt scanner
+description: Run versioned technical debt checks against a Git checkout.
+inputs:
+  directory:
+    description: Path to the target checkout root.
+    default: "."
+outputs:
+  report-path:
+    description: Absolute path to the JSON report on the runner.
+    value: ${{ steps.scan.outputs.report-path }}
+runs:
+  using: composite
+  steps:
+    - uses: ruby/setup-ruby@145243922b4465b78e04dd66294782c7de45901f # v1
+      with:
+        ruby-version: "3.4"
+    - id: scan
+      shell: bash
+      env:
+        SCAN_DIRECTORY: ${{ inputs.directory }}
+      run: |
+        report="$(mktemp "$RUNNER_TEMP/pitaiya-debt-XXXXXX.json")"
+        ruby "$GITHUB_ACTION_PATH/pitaiya-scan.rb" --directory "$SCAN_DIRECTORY" --output "$report"
+        printf 'report-path=%s\n' "$report" >> "$GITHUB_OUTPUT"
